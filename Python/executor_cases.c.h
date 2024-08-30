@@ -5462,6 +5462,11 @@
             break;
         }
 
+        case _INCREMENT_RUN_COUNT: {
+            current_executor->vm_data.was_run = true;
+            break;
+        }
+
         case _FATAL_ERROR: {
             assert(0);
             Py_FatalError("Fatal error uop executed.");
