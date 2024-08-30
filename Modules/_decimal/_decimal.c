@@ -130,13 +130,25 @@ get_module_state_by_def(PyTypeObject *tp)
     return get_module_state(mod);
 }
 
+// MSVC inlines a branch like this on PGO builds unless the caller branches
+static inline PyObject *
+_left_or_right(PyObject *left, PyObject *right, void *token)
+{
+    if (PyType_GetBaseByToken(Py_TYPE(left), token, NULL) == 1) {
+        return left;
+    }
+    assert(!PyErr_Occurred());
+    assert(PyType_GetBaseByToken(Py_TYPE(right), token, NULL) == 1);
+    return right;
+}
+
+static PyType_Spec dec_spec;
+
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyObject *mod = _PyType_GetModuleByDef2(Py_TYPE(left), Py_TYPE(right),
-                                            &_decimal_module);
-    assert(mod != NULL);
-    return get_module_state(mod);
+    PyObject *dec = _left_or_right(left, right, &dec_spec);
+    return get_module_state_by_def(Py_TYPE(dec));
 }
 
 
@@ -749,7 +761,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 {
     PyObject *res = Py_NotImplemented;
 
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
     assert(PyDecSignalDict_Check(state, v));
 
     if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
@@ -4656,7 +4668,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
 
 #ifdef Py_DEBUG
     assert(PyDec_Check(state, v));
@@ -5044,6 +5056,7 @@ static PyMethodDef dec_methods [] =
 };
 
 static PyType_Slot dec_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, dec_traverse},
