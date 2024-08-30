@@ -238,6 +238,15 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+
+glob
+----
+
+* :func:`glob.glob` and :func:`~glob.iglob` no longer make some unnecessary
+  system calls. This speeds up most globbing operations by 20-80%.
+  (Contributed by Barney Gale in :gh:`116380`.)
+
+
 Deprecated
 ==========
 
