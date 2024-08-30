@@ -3389,6 +3389,14 @@ DisableEventHook(void)
 #endif
 }
 
+static void
+module_free(void *mod)
+{
+    Py_CLEAR(Tkinter_TclError);
+    Py_CLEAR(Tkapp_Type);
+    Py_CLEAR(Tktt_Type);
+    Py_CLEAR(PyTclObject_Type);
+}
 
 static struct PyModuleDef _tkintermodule = {
     PyModuleDef_HEAD_INIT,
@@ -3399,7 +3407,7 @@ static struct PyModuleDef _tkintermodule = {
     NULL,
     NULL,
     NULL,
-    NULL
+    module_free
 };
 
 PyMODINIT_FUNC
